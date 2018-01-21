@@ -1,0 +1,11 @@
+{
+  "name": "not-redux",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "author": "Kyle Jacobson",
+  "license": "ISC",
+  "dependencies": {
+    "bel": "^5.1.5"
+  }
+}
