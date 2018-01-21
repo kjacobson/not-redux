@@ -10,7 +10,13 @@ const myAppValidator = (state) => {
     }
     return Object.keys(errorsObj).length ? errorsObj : false;
 };
-const myAppFailHandler = (err) => {
+const myAppFailHandler = (err, dispatch) => {
+    /*
+     * In all likelihood, we'll want
+     * to dispatch an action here.
+     * That means we need to pass
+     * `dispatch`
+     */
     console.log(err);
 };
 

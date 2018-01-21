@@ -12,7 +12,8 @@ module.exports = ACTION_TYPES;
 },{}],2:[function(require,module,exports){
 const ACTION_TYPES = require('./action_types');
 
-const requestToDeleteListItem = (itemId, dispatch) => {
+// These could make async requests, obviously.
+const requestToDeleteListItem = (dispatch, itemId) => {
     setTimeout(() => {
         dispatch(ACTION_TYPES.LIST_ITEM_REMOVED, itemId);
     }, 2000);
@@ -22,7 +23,7 @@ const removeListItemFromList = (items, itemId) => {
         return item.id !== itemId;
     });
 };
-const requestToChangePage = (pageData, dispatch) => {
+const requestToChangePage = (dispatch, pageData) => {
     setTimeout(() => {
         dispatch(ACTION_TYPES.CHANGE_PAGE, pageData);
     }, 500);
@@ -36,20 +37,31 @@ const raw = require('bel/raw');
 const list = require('./list');
 const listItem = require('./list_item');
 
+/*
+ * Just a plain old function! Not concerned with
+ * the framework.
+ */
 const getPageFromList = (offset, count, list) => {
     return list.slice(offset, offset + count);
 };
-const AppComponent = (state, dispatch) => {
+const AppComponent = (dispatch, state) => {
+    /* The current implementation of the App's render()
+     * method expects to be replacing a child node of the body,
+     * so this method should return a DOM node whose ID
+     * corresponds to whatever was passed into the App on
+     * initialization. We could easily rewrite to just be
+     * template literals and innerHTML though.
+     */
     return bel`<main id='appRoot'>
         ${state.pending ?
             raw('<p>Pending...</p>') :
-            list({
+            list(dispatch, {
                 currentPage : getPageFromList(state.offset, state.count, state.items),
                 count : state.count,
                 offset : state.offset,
                 totalItems : state.items.length,
                 listItemComponent : listItem
-            }, dispatch)
+            })
         }
     </main>`;
 };
@@ -60,13 +72,27 @@ const bel = require('bel');
 const ACTION_TYPES = require('../action_types');
 const applyDispatch = require('../../lib/util/apply_dispatch');
 
-const handleChangePage = (e, dispatch) => {
+/*
+ * DOM event handlers expect to be passed 
+ * an event object and a dispatch method.
+ * Since the vDOM implementation handles
+ * event binding, we create a partially-applied
+ * version of our event handlers that already
+ * knows about dispatch.
+ */
+const handleChangePage = (dispatch, e) => {
     e.preventDefault();
     const url = e.target.getAttribute('href');
     const [match, count, offset] = url.match(/\?.*count=(\d+)&offset=(\d+)/i);
     dispatch(ACTION_TYPES.REQUEST_NEW_PAGE, { count : parseInt(count), offset : parseInt(offset) });
 };
-const paginationLink = (props, dispatch) => {
+/*
+ * It's just a function. It doesn't have 
+ * to be passed a single argument called props.
+ * I just do this in cases where it cares about
+ * several.
+ */
+const paginationLink = (dispatch, props) => {
     const { count, offset, text } = props;
     return bel`<td>
         <a href="/items/?count=${count}&offset=${offset}" onclick="${applyDispatch(handleChangePage, dispatch)}">
@@ -75,7 +101,7 @@ const paginationLink = (props, dispatch) => {
     </td>`;
 };
 
-const list = (props, dispatch) => {
+const list = (dispatch, props) => {
   const {currentPage, count, offset, totalItems, listItemComponent} = props;  
   return bel`<table>
     <tbody>
@@ -83,8 +109,8 @@ const list = (props, dispatch) => {
     </tbody>
     <tfoot>
         <tr>
-            ${(offset - count >= 0 ? paginationLink({count, offset : offset - count, text : 'Prev Page'}, dispatch) : '')}
-            ${(offset + count < totalItems ? paginationLink({count, offset : offset + count, text : 'Next Page'}, dispatch) : '')}
+            ${(offset - count >= 0 ? paginationLink(dispatch, {count, offset : offset - count, text : 'Prev Page'}) : '')}
+            ${(offset + count < totalItems ? paginationLink(dispatch, {count, offset : offset + count, text : 'Next Page'}) : '')}
         </tr>
     </tfoot>
   </table>`;
@@ -98,31 +124,39 @@ const ACTION_TYPES = require('../action_types');
 const reducer = require('../reducer');
 const applyDispatch = require('../../lib/util/apply_dispatch');
 
-const handleItemDetails = (e, dispatch) => {
+/*
+ * DOM event handlers expect to be passed 
+ * an event object and a dispatch method.
+ * Since the vDOM implementation handles
+ * event binding, we create a partially-applied
+ * version of our event handlers that already
+ * knows about dispatch.
+ */
+const handleItemDetails = (dispatch, e) => {
     e.preventDefault();
     const itemId = parseInt(e.target.dataset.itemId);
     dispatch(ACTION_TYPES.TOGGLE_LIST_ITEM_DETAILS, itemId);
 };
-const handleDeleteItem = (e, dispatch) => {
+const handleDeleteItem = (dispatch, e) => {
     e.preventDefault();
     const itemId = parseInt(e.target.dataset.itemId);
     dispatch(ACTION_TYPES.REMOVE_LIST_ITEM, itemId);
 };
 
-const detailsLink = (item, dispatch) => {
+const detailsLink = (dispatch, item) => {
     return bel`<a href="/items/${item.id}/" data-item-id="${item.id}" onclick="${applyDispatch(handleItemDetails, dispatch)}">Details</a>`;
 };
 
-const deleteLink = (item, dispatch) => {
+const deleteLink = (dispatch, item) => {
     return bel`<a href="/items/${item.id}/delete" data-item-id="${item.id}" onclick="${applyDispatch(handleDeleteItem, dispatch)}">Delete</a>`;
 };
 
-const listItem = (item, dispatch) => {
+const listItem = (dispatch, item) => {
   return bel`<tr>
     <td>${item.id}</td>
     <td>${item.name}</td>
-    <td>${detailsLink(item, dispatch)}</td>
-    <td>${deleteLink(item, dispatch)}</td>
+    <td>${detailsLink(dispatch, item)}</td>
+    <td>${deleteLink(dispatch, item)}</td>
   </tr>`;
 };
 
@@ -132,38 +166,56 @@ module.exports = listItem;
 const ACTION_TYPES = require('./action_types');
 const { requestToDeleteListItem, removeListItemFromList, requestToChangePage } = require('./actions');
 
-const reducer = (state, actionName, actionData, dispatch) => {
-  let listItemId;
-  switch (actionName) {
-    case ACTION_TYPES.REQUEST_NEW_PAGE:
-      state.pending = true;
-      requestToChangePage(actionData, dispatch);
-      break;
-    case ACTION_TYPES.CHANGE_PAGE:
-      state.pending = false;
-      state.count = actionData.count;
-      state.offset = actionData.offset;
-      break;
-    case ACTION_TYPES.TOGGLE_LIST_ITEM_DETAILS:
-      listItemId = actionData;
-      // state = toggleDetailVisibility(state, listItemId);
-      break;
-    case ACTION_TYPES.REMOVE_LIST_ITEM:
-      listItemId = actionData;
-      state.pending = true;
-      requestToDeleteListItem(listItemId, dispatch);
-      break;
-    case ACTION_TYPES.LIST_ITEM_REMOVED:
-      listItemId = actionData;
-      state.pending = false;
-      state.items = removeListItemFromList(state.items, listItemId);
-      if (state.offset >= state.items.length) {
-          state.offset -= state.count;
-      }
-      break;
-  };
+/*
+ * Reducer gets the following:
+ * An entire app state object.
+ * The AppState store's getter enforces that
+ * this is a clone of the current app state.
+ *
+ * An action name. 
+ * I use ACTION_TYPES above as a convention,
+ * so we have some typo-protection.
+ *
+ * An action data object.
+ * This could be anything, but is usually
+ * pulled from a DOM node via an event
+ * object.
+ *
+ * A reference to our App's dispatch method.
+ */
+const reducer = (dispatch, state, actionName, actionData) => {
+    let listItemId;
+    switch (actionName) {
+        case ACTION_TYPES.REQUEST_NEW_PAGE:
+            state.pending = true;
+            requestToChangePage(dispatch, actionData);
+            break;
+        case ACTION_TYPES.CHANGE_PAGE:
+            state.pending = false;
+            state.count = actionData.count;
+            state.offset = actionData.offset;
+            break;
+        case ACTION_TYPES.TOGGLE_LIST_ITEM_DETAILS:
+            listItemId = actionData;
+            // state = toggleDetailVisibility(state, listItemId);
+            break;
+        case ACTION_TYPES.REMOVE_LIST_ITEM:
+            listItemId = actionData;
+            state.pending = true;
+            requestToDeleteListItem(dispatch, listItemId);
+            break;
+        case ACTION_TYPES.LIST_ITEM_REMOVED:
+            listItemId = actionData;
+            state.pending = false;
+            state.items = removeListItemFromList(state.items, listItemId);
+            if (state.offset >= state.items.length) {
+                state.offset -= state.count;
+            }
+            break;
+    };
 
-  return state;
+    // Reducer returns new state object
+    return state;
 };
 
 module.exports = reducer;
@@ -181,7 +233,13 @@ const myAppValidator = (state) => {
     }
     return Object.keys(errorsObj).length ? errorsObj : false;
 };
-const myAppFailHandler = (err) => {
+const myAppFailHandler = (err, dispatch) => {
+    /*
+     * In all likelihood, we'll want
+     * to dispatch an action here.
+     * That means we need to pass
+     * `dispatch`
+     */
     console.log(err);
 };
 
@@ -223,7 +281,7 @@ class App {
         try {
           this.state.propose(newState);
         } catch (err) {
-          this.unacceptableStateHandler(err);
+          this.unacceptableStateHandler(err, this.dispatch);
         }
         this.render();
     }
@@ -233,13 +291,16 @@ class App {
     }
 
     dispatch(actionName, actionData) {
-        const newState = this.reducer(this.state.data, actionName, actionData, this.dispatch);
+        const newState = this.reducer(this.dispatch, this.state.data, actionName, actionData);
         this.changeState(newState);
     }
 
+    /* TODO: we should have the option
+     * of passing this in.
+     */
     render() {
         document.body.replaceChild(
-            this.baseComponent(this.state.data, this.dispatch),
+            this.baseComponent(this.dispatch, this.state.data),
             document.getElementById(this.appRootId)
         );
     }
@@ -256,6 +317,10 @@ class AppState {
     this.stateValidator = stateValidator;
   }
   
+  /*
+   * Enforce immutability at the
+   * framework level. Always clone.
+   */
   get data() {
     return deepClone(this._data);
   }
@@ -267,8 +332,19 @@ class AppState {
   propose(newState) {
     let validatorError = this.stateValidator(newState);
     if (!validatorError) {
+      /*
+       * If we don't accept the
+       * new state, that's fine.
+       * We keep the previous one.
+       */
       this.data = newState;
     } else {
+      /* 
+       * We don't have to do it this way,
+       * but catching an error and 
+       * dispatching a new action
+       * makes some sense.
+       */
       throw new Error(validatorError);
     }
   }
@@ -278,8 +354,8 @@ module.exports = AppState;
 
 },{"./util/deep_clone":11}],10:[function(require,module,exports){
 const applyDispatch = (fn, dispatch) => {
-    return (arg) => {
-        return fn(arg, dispatch);
+    return function() {
+        return fn(dispatch, ...arguments);
     };
 };
 module.exports = applyDispatch;
