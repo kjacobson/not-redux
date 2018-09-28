@@ -14,7 +14,8 @@ const handleChangePage = (dispatch, e) => {
     e.preventDefault();
     const url = e.target.getAttribute('href');
     const [match, count, offset] = url.match(/\?.*count=(\d+)&offset=(\d+)/i);
-    dispatch(ACTION_TYPES.REQUEST_NEW_PAGE, { count : parseInt(count), offset : parseInt(offset) });
+    requestToChangePage(dispatch, { count : parseInt(count), offset : parseInt(offset) });
+    dispatch(ACTION_TYPES.REQUEST_NEW_PAGE);
 };
 /*
  * It's just a function. It doesn't have 

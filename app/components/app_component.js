@@ -2,6 +2,7 @@ const bel = require('bel');
 const raw = require('bel/raw');
 const list = require('./list');
 const listItem = require('./list_item');
+const itemDetails = require('./item_details');
 
 /*
  * Just a plain old function! Not concerned with
@@ -9,6 +10,11 @@ const listItem = require('./list_item');
  */
 const getPageFromList = (offset, count, list) => {
     return list.slice(offset, offset + count);
+};
+const getListItemById = (id, list) => {
+    return list.find((item) => {
+        return item.id === id;
+    });
 };
 const AppComponent = (dispatch, state) => {
     /* The current implementation of the App's render()
@@ -29,6 +35,12 @@ const AppComponent = (dispatch, state) => {
                 listItemComponent : listItem
             })
         }
+        ${(state.selectedItemForDetails &&
+            itemDetails(
+                dispatch,
+                getListItemById(state.selectedItemForDetails, state.items)
+            )
+        ) || ''}
     </main>`;
 };
 module.exports = AppComponent;

@@ -14,11 +14,12 @@ const applyDispatch = require('../../lib/util/apply_dispatch');
 const handleItemDetails = (dispatch, e) => {
     e.preventDefault();
     const itemId = parseInt(e.target.dataset.itemId);
-    dispatch(ACTION_TYPES.TOGGLE_LIST_ITEM_DETAILS, itemId);
+    dispatch(ACTION_TYPES.SHOW_LIST_ITEM_DETAILS, itemId);
 };
 const handleDeleteItem = (dispatch, e) => {
     e.preventDefault();
     const itemId = parseInt(e.target.dataset.itemId);
+    requestToDeleteListItem(dispatch, itemId);
     dispatch(ACTION_TYPES.REMOVE_LIST_ITEM, itemId);
 };
 

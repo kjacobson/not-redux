@@ -1,6 +1,7 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 const ACTION_TYPES = {
-    TOGGLE_LIST_ITEM_DETAILS : 'toggleListItemDetails',
+    SHOW_LIST_ITEM_DETAILS : 'showListItemDetails',
+    HIDE_LIST_ITEM_DETAILS : 'hideListItemDetails',
     REMOVE_LIST_ITEM : 'removeListItem',
     LIST_ITEM_REMOVED : 'listItemRemoved',
     CHANGE_PAGE : 'changePage',
@@ -36,6 +37,7 @@ const bel = require('bel');
 const raw = require('bel/raw');
 const list = require('./list');
 const listItem = require('./list_item');
+const itemDetails = require('./item_details');
 
 /*
  * Just a plain old function! Not concerned with
@@ -43,6 +45,11 @@ const listItem = require('./list_item');
  */
 const getPageFromList = (offset, count, list) => {
     return list.slice(offset, offset + count);
+};
+const getListItemById = (id, list) => {
+    return list.find((item) => {
+        return item.id === id;
+    });
 };
 const AppComponent = (dispatch, state) => {
     /* The current implementation of the App's render()
@@ -63,11 +70,42 @@ const AppComponent = (dispatch, state) => {
                 listItemComponent : listItem
             })
         }
+        ${(state.selectedItemForDetails &&
+            itemDetails(
+                dispatch,
+                getListItemById(state.selectedItemForDetails, state.items)
+            )
+        ) || ''}
     </main>`;
 };
 module.exports = AppComponent;
 
-},{"./list":4,"./list_item":5,"bel":13,"bel/raw":14}],4:[function(require,module,exports){
+},{"./item_details":4,"./list":5,"./list_item":6,"bel":14,"bel/raw":15}],4:[function(require,module,exports){
+const bel = require('bel');
+const ACTION_TYPES = require('../action_types');
+const applyDispatch = require('../../lib/util/apply_dispatch');
+
+const handleHideDetails = (dispatch, e) => {
+    e.preventDefault();
+    dispatch(ACTION_TYPES.HIDE_LIST_ITEM_DETAILS);
+};
+
+const itemDetails = (dispatch, item) => {
+    return bel`<aside class='item-details-container'>
+        <dl class='item-details'>
+            <dt>Name:</dt>
+            <dd>${item.name}</dd>
+
+            <dt>Bio:</dt>
+            <dd>${item.bio}</dd>
+        </dl>
+        <a href="/items" onclick="${applyDispatch(handleHideDetails, dispatch)}">Hide details</a>
+    </aside>`;
+};
+
+module.exports = itemDetails;
+
+},{"../../lib/util/apply_dispatch":11,"../action_types":1,"bel":14}],5:[function(require,module,exports){
 const bel = require('bel');
 const ACTION_TYPES = require('../action_types');
 const applyDispatch = require('../../lib/util/apply_dispatch');
@@ -118,7 +156,7 @@ const list = (dispatch, props) => {
 
 module.exports = list;
 
-},{"../../lib/util/apply_dispatch":10,"../action_types":1,"bel":13}],5:[function(require,module,exports){
+},{"../../lib/util/apply_dispatch":11,"../action_types":1,"bel":14}],6:[function(require,module,exports){
 const bel = require('bel');
 const ACTION_TYPES = require('../action_types');
 const reducer = require('../reducer');
@@ -135,7 +173,7 @@ const applyDispatch = require('../../lib/util/apply_dispatch');
 const handleItemDetails = (dispatch, e) => {
     e.preventDefault();
     const itemId = parseInt(e.target.dataset.itemId);
-    dispatch(ACTION_TYPES.TOGGLE_LIST_ITEM_DETAILS, itemId);
+    dispatch(ACTION_TYPES.SHOW_LIST_ITEM_DETAILS, itemId);
 };
 const handleDeleteItem = (dispatch, e) => {
     e.preventDefault();
@@ -162,8 +200,10 @@ const listItem = (dispatch, item) => {
 
 module.exports = listItem;
 
-},{"../../lib/util/apply_dispatch":10,"../action_types":1,"../reducer":6,"bel":13}],6:[function(require,module,exports){
+},{"../../lib/util/apply_dispatch":11,"../action_types":1,"../reducer":7,"bel":14}],7:[function(require,module,exports){
 const ACTION_TYPES = require('./action_types');
+// const ROUTES = require('./routes');
+// const { matchUrlToRoute } = require('./routing_tools');
 const { requestToDeleteListItem, removeListItemFromList, requestToChangePage } = require('./actions');
 
 /*
@@ -186,6 +226,10 @@ const { requestToDeleteListItem, removeListItemFromList, requestToChangePage } =
 const reducer = (dispatch, state, actionName, actionData) => {
     let listItemId;
     switch (actionName) {
+        // case ACTION_TYPES.NAVIGATE_TO_URL:
+        //     state.pending = true;
+        //     state.url = actionData;
+        //     matchUrlToRoute(ROUTES);
         case ACTION_TYPES.REQUEST_NEW_PAGE:
             state.pending = true;
             requestToChangePage(dispatch, actionData);
@@ -195,9 +239,12 @@ const reducer = (dispatch, state, actionName, actionData) => {
             state.count = actionData.count;
             state.offset = actionData.offset;
             break;
-        case ACTION_TYPES.TOGGLE_LIST_ITEM_DETAILS:
+        case ACTION_TYPES.SHOW_LIST_ITEM_DETAILS:
             listItemId = actionData;
-            // state = toggleDetailVisibility(state, listItemId);
+            state.selectedItemForDetails = listItemId;
+            break;
+        case ACTION_TYPES.HIDE_LIST_ITEM_DETAILS:
+            state.selectedItemForDetails = null;
             break;
         case ACTION_TYPES.REMOVE_LIST_ITEM:
             listItemId = actionData;
@@ -220,7 +267,7 @@ const reducer = (dispatch, state, actionName, actionData) => {
 
 module.exports = reducer;
 
-},{"./action_types":1,"./actions":2}],7:[function(require,module,exports){
+},{"./action_types":1,"./actions":2}],8:[function(require,module,exports){
 const App = require('./lib/app');
 const AppComponent = require('./app/components/app_component');
 const reducer = require('./app/reducer');
@@ -252,18 +299,18 @@ const myApp = new App({
     rootComponent : AppComponent 
 }).setInitialState({
     items : [
-        { id : 0, name : "Jack" },
-        { id : 1, name : "Jill" },
-        { id : 2, name : "John" },
-        { id : 3, name : "Jennifer" },
-        { id : 4, name : "Jillian" }
+        { id : 1, name : "Jack", bio : "Lorem ipsum dolor sit amet" },
+        { id : 2, name : "Jill", bio : "There's nothing to see here" },
+        { id : 3, name : "John", bio : "The miseducation of Lauryn Hill" },
+        { id : 4, name : "Jennifer", bio : "This porridge is just right" },
+        { id : 5, name : "Jillian", bio : "Till I spent some time on a river boat" }
     ],
     count : 2,
     offset : 0
 });
 
 
-},{"./app/components/app_component":3,"./app/reducer":6,"./lib/app":8}],8:[function(require,module,exports){
+},{"./app/components/app_component":3,"./app/reducer":7,"./lib/app":9}],9:[function(require,module,exports){
 const AppState = require('./app_state');
 
 class App {
@@ -308,7 +355,7 @@ class App {
 
 module.exports = App;
 
-},{"./app_state":9}],9:[function(require,module,exports){
+},{"./app_state":10}],10:[function(require,module,exports){
 const deepClone = require('./util/deep_clone');
 
 class AppState {
@@ -352,7 +399,7 @@ class AppState {
 
 module.exports = AppState;
 
-},{"./util/deep_clone":11}],10:[function(require,module,exports){
+},{"./util/deep_clone":12}],11:[function(require,module,exports){
 const applyDispatch = (fn, dispatch) => {
     return function() {
         return fn(dispatch, ...arguments);
@@ -360,14 +407,14 @@ const applyDispatch = (fn, dispatch) => {
 };
 module.exports = applyDispatch;
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 const deepClone = (obj) => {
   return JSON.parse(JSON.stringify(obj));
 };
 
 module.exports = deepClone;
 
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 var trailingNewlineRegex = /\n[\s]+$/
 var leadingNewlineRegex = /^\n[\s]+/
 var trailingSpaceRegex = /[\s]+$/
@@ -500,7 +547,7 @@ module.exports = function appendChild (el, childs) {
   }
 }
 
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 var hyperx = require('hyperx')
 var appendChild = require('./appendChild')
 
@@ -601,7 +648,7 @@ module.exports = hyperx(belCreateElement, {comments: true})
 module.exports.default = module.exports
 module.exports.createElement = belCreateElement
 
-},{"./appendChild":12,"hyperx":16}],14:[function(require,module,exports){
+},{"./appendChild":13,"hyperx":17}],15:[function(require,module,exports){
 function rawCreateElement (tag) {
   if (typeof window !== 'undefined') {
     return browser()
@@ -628,7 +675,7 @@ function toArray (arr) {
 
 module.exports = rawCreateElement
 
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 module.exports = attributeToProperty
 
 var transform = {
@@ -649,7 +696,7 @@ function attributeToProperty (h) {
   }
 }
 
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 var attrToProp = require('hyperscript-attribute-to-property')
 
 var VAR = 0, TEXT = 1, OPEN = 2, CLOSE = 3, ATTR = 4
@@ -932,4 +979,4 @@ var closeRE = RegExp('^(' + [
 ].join('|') + ')(?:[\.#][a-zA-Z0-9\u007F-\uFFFF_:-]+)*$')
 function selfClosing (tag) { return closeRE.test(tag) }
 
-},{"hyperscript-attribute-to-property":15}]},{},[7]);
+},{"hyperscript-attribute-to-property":16}]},{},[8]);

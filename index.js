@@ -29,11 +29,11 @@ const myApp = new App({
     rootComponent : AppComponent 
 }).setInitialState({
     items : [
-        { id : 0, name : "Jack" },
-        { id : 1, name : "Jill" },
-        { id : 2, name : "John" },
-        { id : 3, name : "Jennifer" },
-        { id : 4, name : "Jillian" }
+        { id : 1, name : "Jack", bio : "Lorem ipsum dolor sit amet" },
+        { id : 2, name : "Jill", bio : "There's nothing to see here" },
+        { id : 3, name : "John", bio : "The miseducation of Lauryn Hill" },
+        { id : 4, name : "Jennifer", bio : "This porridge is just right" },
+        { id : 5, name : "Jillian", bio : "Till I spent some time on a river boat" }
     ],
     count : 2,
     offset : 0
