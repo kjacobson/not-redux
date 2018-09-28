@@ -207,7 +207,7 @@ module.exports = listItem;
 const ACTION_TYPES = require('./action_types');
 // const ROUTES = require('./routes');
 // const { matchUrlToRoute } = require('./routing_tools');
-const { requestToDeleteListItem, removeListItemFromList, requestToChangePage } = require('./actions');
+const { removeListItemFromList } = require('./actions');
 
 /*
  * Reducer gets the following:
