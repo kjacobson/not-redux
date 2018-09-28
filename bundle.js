@@ -107,6 +107,7 @@ module.exports = itemDetails;
 
 },{"../../lib/util/apply_dispatch":11,"../action_types":1,"bel":14}],5:[function(require,module,exports){
 const bel = require('bel');
+const actions = require('../actions');
 const ACTION_TYPES = require('../action_types');
 const applyDispatch = require('../../lib/util/apply_dispatch');
 
@@ -122,7 +123,8 @@ const handleChangePage = (dispatch, e) => {
     e.preventDefault();
     const url = e.target.getAttribute('href');
     const [match, count, offset] = url.match(/\?.*count=(\d+)&offset=(\d+)/i);
-    dispatch(ACTION_TYPES.REQUEST_NEW_PAGE, { count : parseInt(count), offset : parseInt(offset) });
+    actions.requestToChangePage(dispatch, { count : parseInt(count), offset : parseInt(offset) });
+    dispatch(ACTION_TYPES.REQUEST_NEW_PAGE);
 };
 /*
  * It's just a function. It doesn't have 
@@ -156,10 +158,10 @@ const list = (dispatch, props) => {
 
 module.exports = list;
 
-},{"../../lib/util/apply_dispatch":11,"../action_types":1,"bel":14}],6:[function(require,module,exports){
+},{"../../lib/util/apply_dispatch":11,"../action_types":1,"../actions":2,"bel":14}],6:[function(require,module,exports){
 const bel = require('bel');
 const ACTION_TYPES = require('../action_types');
-const reducer = require('../reducer');
+const actions = require('../actions');
 const applyDispatch = require('../../lib/util/apply_dispatch');
 
 /*
@@ -178,6 +180,7 @@ const handleItemDetails = (dispatch, e) => {
 const handleDeleteItem = (dispatch, e) => {
     e.preventDefault();
     const itemId = parseInt(e.target.dataset.itemId);
+    actions.requestToDeleteListItem(dispatch, itemId);
     dispatch(ACTION_TYPES.REMOVE_LIST_ITEM, itemId);
 };
 
@@ -200,7 +203,7 @@ const listItem = (dispatch, item) => {
 
 module.exports = listItem;
 
-},{"../../lib/util/apply_dispatch":11,"../action_types":1,"../reducer":7,"bel":14}],7:[function(require,module,exports){
+},{"../../lib/util/apply_dispatch":11,"../action_types":1,"../actions":2,"bel":14}],7:[function(require,module,exports){
 const ACTION_TYPES = require('./action_types');
 // const ROUTES = require('./routes');
 // const { matchUrlToRoute } = require('./routing_tools');
@@ -232,7 +235,6 @@ const reducer = (dispatch, state, actionName, actionData) => {
         //     matchUrlToRoute(ROUTES);
         case ACTION_TYPES.REQUEST_NEW_PAGE:
             state.pending = true;
-            requestToChangePage(dispatch, actionData);
             break;
         case ACTION_TYPES.CHANGE_PAGE:
             state.pending = false;
@@ -247,9 +249,7 @@ const reducer = (dispatch, state, actionName, actionData) => {
             state.selectedItemForDetails = null;
             break;
         case ACTION_TYPES.REMOVE_LIST_ITEM:
-            listItemId = actionData;
             state.pending = true;
-            requestToDeleteListItem(dispatch, listItemId);
             break;
         case ACTION_TYPES.LIST_ITEM_REMOVED:
             listItemId = actionData;

@@ -1,6 +1,6 @@
 const bel = require('bel');
 const ACTION_TYPES = require('../action_types');
-const reducer = require('../reducer');
+const actions = require('../actions');
 const applyDispatch = require('../../lib/util/apply_dispatch');
 
 /*
@@ -19,7 +19,7 @@ const handleItemDetails = (dispatch, e) => {
 const handleDeleteItem = (dispatch, e) => {
     e.preventDefault();
     const itemId = parseInt(e.target.dataset.itemId);
-    requestToDeleteListItem(dispatch, itemId);
+    actions.requestToDeleteListItem(dispatch, itemId);
     dispatch(ACTION_TYPES.REMOVE_LIST_ITEM, itemId);
 };
 

@@ -1,4 +1,5 @@
 const bel = require('bel');
+const actions = require('../actions');
 const ACTION_TYPES = require('../action_types');
 const applyDispatch = require('../../lib/util/apply_dispatch');
 
@@ -14,7 +15,7 @@ const handleChangePage = (dispatch, e) => {
     e.preventDefault();
     const url = e.target.getAttribute('href');
     const [match, count, offset] = url.match(/\?.*count=(\d+)&offset=(\d+)/i);
-    requestToChangePage(dispatch, { count : parseInt(count), offset : parseInt(offset) });
+    actions.requestToChangePage(dispatch, { count : parseInt(count), offset : parseInt(offset) });
     dispatch(ACTION_TYPES.REQUEST_NEW_PAGE);
 };
 /*
